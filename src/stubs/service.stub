@@ -1,0 +1,107 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Repositories\Interfaces\{{ repository }}RepositoryInterface;
+use {{ namespace }}\Interfaces\{{ class }}ServiceInterface;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
+
+class {{ class }}Service implements {{ class }}ServiceInterface
+{
+    protected ${{ repositoryVariable }}Repository;
+
+    public function __construct({{ repository }}RepositoryInterface ${{ repositoryVariable }}Repository)
+    {
+        $this->{{ repositoryVariable }}Repository = ${{ repositoryVariable }}Repository;
+    }
+
+    public function getAll(): Collection
+    {
+        return $this->{{ repositoryVariable }}Repository->all();
+    }
+
+    public function getPaginated(array $params = []): LengthAwarePaginator
+    {
+        // Handle sorting
+        if (isset($params['sort_by'])) {
+            $direction = $params['sort_direction'] ?? 'asc';
+            $this->{{ repositoryVariable }}Repository->orderBy($params['sort_by'], $direction);
+        }
+
+        // Handle relations
+        if (isset($params['with'])) {
+            $this->{{ repositoryVariable }}Repository->with($params['with']);
+        }
+
+        return $this->{{ repositoryVariable }}Repository->paginate($params);
+    }
+
+    public function findById($id): ?Model
+    {
+        return $this->{{ repositoryVariable }}Repository->find($id);
+    }
+
+    public function create(array $data): Model
+    {
+        // Add any business logic here before creating
+        return $this->{{ repositoryVariable }}Repository->create($data);
+    }
+
+    public function update($id, array $data): bool
+    {
+        // Add any business logic here before updating
+        return $this->{{ repositoryVariable }}Repository->update($id, $data);
+    }
+
+    public function delete($id): bool
+    {
+        // Add any business logic here before deleting
+        return $this->{{ repositoryVariable }}Repository->delete($id);
+    }
+
+    public function search(string $query, array $columns = ['*']): Collection
+    {
+        return $this->{{ repositoryVariable }}Repository->search($query, $columns);
+    }
+
+    public function searchPaginated(string $query, array $params = []): LengthAwarePaginator
+    {
+        $columns = $params['columns'] ?? ['*'];
+        
+        // Handle sorting
+        if (isset($params['sort_by'])) {
+            $direction = $params['sort_direction'] ?? 'asc';
+            $this->{{ repositoryVariable }}Repository->orderBy($params['sort_by'], $direction);
+        }
+
+        // Handle relations
+        if (isset($params['with'])) {
+            $this->{{ repositoryVariable }}Repository->with($params['with']);
+        }
+
+        return $this->{{ repositoryVariable }}Repository->searchPaginated($query, $columns, $params);
+    }
+
+    public function getFiltered(array $filters = [], array $params = []): LengthAwarePaginator
+    {
+        // Handle sorting
+        if (isset($params['sort_by'])) {
+            $direction = $params['sort_direction'] ?? 'asc';
+            $this->{{ repositoryVariable }}Repository->orderBy($params['sort_by'], $direction);
+        }
+
+        // Handle relations
+        if (isset($params['with'])) {
+            $this->{{ repositoryVariable }}Repository->with($params['with']);
+        }
+
+        // Apply filters
+        if (!empty($filters)) {
+            $this->{{ repositoryVariable }}Repository->filter($filters);
+        }
+
+        return $this->{{ repositoryVariable }}Repository->paginate($params);
+    }
+}

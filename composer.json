@@ -1,0 +1,48 @@
+{
+    "name": "madulinux/repository-pattern",
+    "description": "Repository Pattern for Laravel",
+    "type": "laravel-package",
+    "keywords": ["laravel", "repository", "pattern", "repository-pattern", "laravel-repository"],
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^10.0|^11.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0",
+        "orchestra/testbench": "^8.0",
+        "mockery/mockery": "^1.5"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "authors": [
+        {
+            "name": "Madulinux",
+            "email": "madulinux@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "MaduLinux\\RepositoryPattern\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MaduLinux\\RepositoryPattern\\RepositoryPatternServiceProvider"
+            ],
+            "aliases": {
+                "RepositoryPattern": "MaduLinux\\RepositoryPattern\\Facades\\RepositoryPattern"
+            }
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+    }
+}
