@@ -18,10 +18,10 @@ class MakeServiceCommand extends Command
     {
         $name = $this->argument('name');
         $repository = $this->option('repository') ?? $name;
-        
+
         $this->createService($name, $repository);
         $this->createInterface($name, $repository);
-        
+
         $this->info('Service created successfully!');
     }
 
@@ -33,15 +33,15 @@ class MakeServiceCommand extends Command
 
         $serviceContent = str_replace(
             [
-                '{{ namespace }}', 
-                '{{ class }}', 
-                '{{ repository }}', 
+                '{{ namespace }}',
+                '{{ class }}',
+                '{{ repository }}',
                 '{{ repositoryClass }}',
                 '{{ repositoryVariable }}'
             ],
             [
-                $this->getNamespace($name), 
-                $this->getClassName($name), 
+                $this->getNamespace($name),
+                $this->getClassName($name),
                 $repository,
                 class_basename($repository),
                 lcfirst(class_basename($repository))
@@ -102,7 +102,15 @@ class MakeServiceCommand extends Command
 
     protected function getNamespace($name)
     {
-        return 'App\\Services\\' . str_replace('/', '\\', dirname(str_replace('\\', '/', $name)));
+        $namespace = 'App\\Services';
+
+        // If name contains directory separators, append them to namespace
+        $dirname = dirname(str_replace('\\', '/', $name));
+        if ($dirname !== '.') {
+            $namespace .= '\\' . str_replace('/', '\\', $dirname);
+        }
+
+        return $namespace;
     }
 
     protected function getClassName($name)

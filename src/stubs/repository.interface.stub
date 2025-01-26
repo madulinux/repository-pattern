@@ -2,31 +2,224 @@
 
 namespace {{ namespace }}\Interfaces;
 
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use MaduLinux\RepositoryPattern\DataTransferObjects\PaginationParameters;
+use Closure;
 
 interface {{ class }}RepositoryInterface
 {
+    /**
+     * Get all records
+     *
+     * @return Collection
+     */
     public function all(): Collection;
-    
-    public function paginate(array $params = []): LengthAwarePaginator;
-    
+
+    /**
+     * Find record by ID
+     *
+     * @param int|string $id
+     * @return Model|null
+     */
     public function find($id): ?Model;
-    
+
+    /**
+     * Find record by ID or fail
+     *
+     * @param int|string $id
+     * @return Model
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     */
+    public function findOrFail($id): Model;
+
+    /**
+     * Create new record
+     *
+     * @param array $data
+     * @return Model
+     */
     public function create(array $data): Model;
-    
+
+    /**
+     * Update record
+     *
+     * @param int|string $id
+     * @param array $data
+     * @return bool
+     */
     public function update($id, array $data): bool;
-    
+
+    /**
+     * Delete record
+     *
+     * @param int|string $id
+     * @return bool
+     */
     public function delete($id): bool;
-    
+
+    /**
+     * Get paginated records
+     *
+     * @param int $perPage
+     * @return LengthAwarePaginator
+     */
+    public function paginate(int $perPage = 15): LengthAwarePaginator;
+
+    /**
+     * Get paginated records with parameters
+     *
+     * @param PaginationParameters $params
+     * @return LengthAwarePaginator
+     */
+    public function getPaginated(PaginationParameters $params): LengthAwarePaginator;
+
+    /**
+     * Search records
+     *
+     * @param string $query
+     * @param array $columns
+     * @return Collection
+     */
     public function search(string $query, array $columns = ['*']): Collection;
-    
-    public function searchPaginated(string $query, array $columns = ['*'], array $params = []): LengthAwarePaginator;
-    
-    public function orderBy(string $column, string $direction = 'asc'): self;
-    
-    public function filter(array $filters): self;
-    
-    public function with(array $relations): self;
+
+    /**
+     * Search with pagination
+     *
+     * @param string $query
+     * @param array $params
+     * @return LengthAwarePaginator
+     */
+    public function searchPaginated(string $query, array $params = []): LengthAwarePaginator;
+
+    /**
+     * Get filtered records
+     *
+     * @param array $filters
+     * @param array $params
+     * @return LengthAwarePaginator
+     */
+    public function getFiltered(array $filters, array $params = []): LengthAwarePaginator;
+
+    /**
+     * Register an event handler
+     *
+     * @param string $event
+     * @param callable $handler
+     * @return self
+     */
+    public function on(string $event, callable $handler): self;
+
+    /**
+     * Include soft deleted records
+     *
+     * @return self
+     */
+    public function withTrashed(): self;
+
+    /**
+     * Get only soft deleted records
+     *
+     * @return self
+     */
+    public function onlyTrashed(): self;
+
+    /**
+     * Restore soft deleted records
+     *
+     * @param int|string|array $ids
+     * @return bool
+     */
+    public function restore($ids): bool;
+
+    /**
+     * Force delete record
+     *
+     * @param int|string $id
+     * @return bool
+     */
+    public function forceDelete($id): bool;
+
+    /**
+     * Insert multiple records
+     *
+     * @param array $records
+     * @return bool
+     */
+    public function insert(array $records): bool;
+
+    /**
+     * Update multiple records
+     *
+     * @param array $values
+     * @param array $conditions
+     * @return int
+     */
+    public function bulkUpdate(array $values, array $conditions): int;
+
+    /**
+     * Delete multiple records
+     *
+     * @param array $ids
+     * @return int
+     */
+    public function bulkDelete(array $ids): int;
+
+    /**
+     * Upsert records
+     *
+     * @param array $values
+     * @param array|string $uniqueBy
+     * @param array|null $update
+     * @return bool
+     */
+    public function upsert(array $values, $uniqueBy, ?array $update = null): bool;
+
+    /**
+     * Chunk records and process them
+     *
+     * @param int $count
+     * @param callable $callback
+     * @return bool
+     */
+    public function chunk(int $count, callable $callback): bool;
+
+    /**
+     * Execute a callback within a transaction
+     *
+     * @param Closure $callback
+     * @return mixed
+     * @throws \Throwable
+     */
+    public function transaction(Closure $callback);
+
+    /**
+     * Start a new database transaction
+     *
+     * @return void
+     */
+    public function beginTransaction(): void;
+
+    /**
+     * Commit the active database transaction
+     *
+     * @return void
+     */
+    public function commit(): void;
+
+    /**
+     * Rollback the active database transaction
+     *
+     * @return void
+     */
+    public function rollBack(): void;
+
+    /**
+     * Set custom cache key generator
+     *
+     * @param callable $generator
+     * @return self
+     */
+    public function setCacheKeyGenerator(callable $generator): self;
 }

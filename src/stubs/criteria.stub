@@ -1,0 +1,33 @@
+<?php
+
+namespace {{ namespace }};
+
+use MaduLinux\RepositoryPattern\Criteria\BaseCriteria;
+use Illuminate\Database\Eloquent\Builder;
+
+class {{ class }}Criteria extends BaseCriteria
+{
+    /**
+     * Constructor
+     *
+     * @param array $parameters
+     */
+    public function __construct(private array $parameters = [])
+    {
+    }
+
+    /**
+     * Apply the criteria to the query
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    public function apply(Builder $query): Builder
+    {
+        // Implement your criteria logic here
+        // Example:
+        // return $query->where('status', $this->parameters['status']);
+        
+        return $query;
+    }
+}

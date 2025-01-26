@@ -3,98 +3,88 @@
 namespace MaduLinux\RepositoryPattern\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class MakeRepositoryCommand extends Command
 {
-    protected $signature = 'make:repository {name : The name of the repository}
-                          {--model= : The name of the model}
-                          {--force : Force create the file}';
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'make:repository {name} {--model=}';
 
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
     protected $description = 'Create a new repository class';
 
+    /**
+     * Execute the console command.
+     */
     public function handle()
     {
         $name = $this->argument('name');
-        $model = $this->option('model') ?? Str::singular($name);
-        
-        $this->createRepository($name, $model);
-        $this->createInterface($name, $model);
-        
-        $this->info('Repository created successfully!');
+        $modelName = $this->option('model') ?? Str::singular($name);
+
+        $this->createRepository($name, $modelName);
+        $this->createInterface($name);
+
+        $this->info('Repository created successfully.');
     }
 
-    protected function createRepository($name, $model)
+    /**
+     * Create repository class
+     *
+     * @param string $name
+     * @param string $modelName
+     * @return void
+     */
+    protected function createRepository(string $name, string $modelName): void
     {
-        $repositoryTemplate = File::exists($this->getStubPath('repository.stub'))
-            ? File::get($this->getStubPath('repository.stub'))
-            : File::get(__DIR__ . '/../../stubs/repository.stub');
+        $repositoryTemplate = File::get(__DIR__ . '/../../stubs/repository.stub');
 
-        $repositoryContent = str_replace(
+        $repositoryTemplate = str_replace(
             ['{{ namespace }}', '{{ class }}', '{{ model }}', '{{ modelClass }}'],
-            [$this->getNamespace($name), $this->getClassName($name), $model, class_basename($model)],
+            [
+                'App\Repositories',
+                $name,
+                $modelName,
+                $modelName
+            ],
             $repositoryTemplate
         );
 
-        $path = $this->getPath($name);
-
-        if (File::exists($path) && !$this->option('force')) {
-            $this->error('Repository already exists!');
-            return;
+        if (!File::exists($path = app_path('Repositories'))) {
+            File::makeDirectory($path, 0777, true);
         }
 
-        File::makeDirectory(dirname($path), 0777, true, true);
-        File::put($path, $repositoryContent);
+        File::put(app_path("Repositories/{$name}Repository.php"), $repositoryTemplate);
     }
 
-    protected function createInterface($name, $model)
+    /**
+     * Create repository interface
+     *
+     * @param string $name
+     * @return void
+     */
+    protected function createInterface(string $name): void
     {
-        $interfaceTemplate = File::exists($this->getStubPath('repository.interface.stub'))
-            ? File::get($this->getStubPath('repository.interface.stub'))
-            : File::get(__DIR__ . '/../../stubs/repository.interface.stub');
+        $interfaceTemplate = File::get(__DIR__ . '/../../stubs/repository.interface.stub');
 
-        $interfaceContent = str_replace(
-            ['{{ namespace }}', '{{ class }}', '{{ model }}'],
-            [$this->getNamespace($name), $this->getClassName($name), $model],
+        $interfaceTemplate = str_replace(
+            ['{{ namespace }}', '{{ class }}'],
+            ['App\Repositories', $name],
             $interfaceTemplate
         );
 
-        $path = $this->getInterfacePath($name);
-
-        if (File::exists($path) && !$this->option('force')) {
-            $this->error('Repository Interface already exists!');
-            return;
+        if (!File::exists($path = app_path('Repositories/Interfaces'))) {
+            File::makeDirectory($path, 0777, true);
         }
 
-        File::makeDirectory(dirname($path), 0777, true, true);
-        File::put($path, $interfaceContent);
-    }
-
-    protected function getStubPath($stub)
-    {
-        return base_path("stubs/repository-pattern/{$stub}");
-    }
-
-    protected function getPath($name)
-    {
-        $name = Str::replaceFirst($this->laravel->getNamespace(), '', $name);
-        return $this->laravel['path'] . '/Repositories/' . str_replace('\\', '/', $name) . 'Repository.php';
-    }
-
-    protected function getInterfacePath($name)
-    {
-        $name = Str::replaceFirst($this->laravel->getNamespace(), '', $name);
-        return $this->laravel['path'] . '/Repositories/Interfaces/' . str_replace('\\', '/', $name) . 'RepositoryInterface.php';
-    }
-
-    protected function getNamespace($name)
-    {
-        return 'App\\Repositories\\' . str_replace('/', '\\', dirname(str_replace('\\', '/', $name)));
-    }
-
-    protected function getClassName($name)
-    {
-        return str_replace('/', '\\', $name);
+        File::put(app_path("Repositories/Interfaces/{$name}RepositoryInterface.php"), $interfaceTemplate);
     }
 }

@@ -7,6 +7,7 @@ use {{ namespace }}\Interfaces\{{ class }}ServiceInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use MaduLinux\RepositoryPattern\DataTransferObjects\PaginationParameters;
 
 class {{ class }}Service implements {{ class }}ServiceInterface
 {
@@ -24,18 +25,8 @@ class {{ class }}Service implements {{ class }}ServiceInterface
 
     public function getPaginated(array $params = []): LengthAwarePaginator
     {
-        // Handle sorting
-        if (isset($params['sort_by'])) {
-            $direction = $params['sort_direction'] ?? 'asc';
-            $this->{{ repositoryVariable }}Repository->orderBy($params['sort_by'], $direction);
-        }
-
-        // Handle relations
-        if (isset($params['with'])) {
-            $this->{{ repositoryVariable }}Repository->with($params['with']);
-        }
-
-        return $this->{{ repositoryVariable }}Repository->paginate($params);
+        $paginatedParams = PaginationParameters::fromArray($params);
+        return $this->{{ repositoryVariable }}Repository->getPaginated($paginatedParams);
     }
 
     public function findById($id): ?Model
@@ -61,47 +52,51 @@ class {{ class }}Service implements {{ class }}ServiceInterface
         return $this->{{ repositoryVariable }}Repository->delete($id);
     }
 
-    public function search(string $query, array $columns = ['*']): Collection
+    /**
+     * Insert multiple records
+     *
+     * @param array $records
+     * @return bool
+     */
+    public function insert(array $records): bool
     {
-        return $this->{{ repositoryVariable }}Repository->search($query, $columns);
+        return $this->{{ repositoryVariable }}Repository->insert($records);
     }
 
-    public function searchPaginated(string $query, array $params = []): LengthAwarePaginator
+    /**
+     * Update multiple records
+     *
+     * @param array $values
+     * @param array|string $uniqueBy
+     * @param array|null $update
+     * @return int
+     */
+    public function bulkUpdate(array $values, array $conditions): int
     {
-        $columns = $params['columns'] ?? ['*'];
-        
-        // Handle sorting
-        if (isset($params['sort_by'])) {
-            $direction = $params['sort_direction'] ?? 'asc';
-            $this->{{ repositoryVariable }}Repository->orderBy($params['sort_by'], $direction);
-        }
-
-        // Handle relations
-        if (isset($params['with'])) {
-            $this->{{ repositoryVariable }}Repository->with($params['with']);
-        }
-
-        return $this->{{ repositoryVariable }}Repository->searchPaginated($query, $columns, $params);
+        return $this->{{ repositoryVariable }}Repository->bulkUpdate($values, $conditions);
     }
 
-    public function getFiltered(array $filters = [], array $params = []): LengthAwarePaginator
+    /**
+     * Delete multiple records
+     *
+     * @param array $ids
+     * @return int
+     */
+    public function bulkDelete(array $ids): int
     {
-        // Handle sorting
-        if (isset($params['sort_by'])) {
-            $direction = $params['sort_direction'] ?? 'asc';
-            $this->{{ repositoryVariable }}Repository->orderBy($params['sort_by'], $direction);
-        }
+        return $this->{{ repositoryVariable }}Repository->bulkDelete($ids);
+    }
 
-        // Handle relations
-        if (isset($params['with'])) {
-            $this->{{ repositoryVariable }}Repository->with($params['with']);
-        }
-
-        // Apply filters
-        if (!empty($filters)) {
-            $this->{{ repositoryVariable }}Repository->filter($filters);
-        }
-
-        return $this->{{ repositoryVariable }}Repository->paginate($params);
+    /**
+     * Upsert records
+     *
+     * @param array $values
+     * @param array|string $uniqueBy
+     * @param array|null $update
+     * @return bool
+     */
+    public function upsert(array $values, $uniqueBy, ?array $update = null): bool
+    {
+        return $this->{{ repositoryVariable }}Repository->upsert($values, $uniqueBy, $update);
     }
 }

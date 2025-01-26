@@ -3,18 +3,40 @@
 namespace MaduLinux\RepositoryPattern;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use MaduLinux\RepositoryPattern\DataTransferObjects\PaginationParameters;
 use MaduLinux\RepositoryPattern\Traits\Cacheable;
+use MaduLinux\RepositoryPattern\Traits\HasEvents;
+use MaduLinux\RepositoryPattern\Traits\SoftDeletes;
+use MaduLinux\RepositoryPattern\Traits\BulkOperations;
+use MaduLinux\RepositoryPattern\Traits\Transactional;
+use MaduLinux\RepositoryPattern\Traits\CustomCacheKey;
+use MaduLinux\RepositoryPattern\Traits\HasCriteria;
 
 abstract class Repository
 {
-    use Cacheable;
+    use Cacheable,
+        HasEvents,
+        SoftDeletes,
+        BulkOperations,
+        Transactional,
+        HasCriteria,
+        CustomCacheKey {
+            Cacheable::getCacheKey insteadof CustomCacheKey;
+            CustomCacheKey::getCacheKey as getCustomCacheKey;
+        }
 
     /**
      * @var Model
      */
     protected $model;
+
+    /**
+     * @var \Illuminate\Database\Eloquent\Builder
+     */
+    protected $query;
 
     /**
      * Get model instance
@@ -70,7 +92,9 @@ abstract class Repository
      */
     public function create(array $data): Model
     {
+        $this->trigger('creating', $data);
         $result = $this->model->create($data);
+        $this->trigger('created', $result);
         $this->flushCache();
         return $result;
     }
@@ -88,7 +112,10 @@ abstract class Repository
         if (!$record) {
             return false;
         }
+
+        $this->trigger('updating', [$id, $data]);
         $result = $record->update($data);
+        $this->trigger('updated', [$id, $data]);
         $this->flushCache();
         return $result;
     }
@@ -105,7 +132,10 @@ abstract class Repository
         if (!$record) {
             return false;
         }
+
+        $this->trigger('deleting', $id);
         $result = $record->delete();
+        $this->trigger('deleted', $id);
         $this->flushCache();
         return $result;
     }
@@ -200,5 +230,59 @@ abstract class Repository
 
             return $query->paginate($perPage);
         });
+    }
+
+
+    /**
+     * Get paginated records
+     *
+     * @param PaginationParameters $params
+     * @return LengthAwarePaginator
+     */
+    public function getPaginated(PaginationParameters $params): LengthAwarePaginator
+    {
+        $query = $this->model->query();
+        // Handle filtering
+        if (isset($params->filters)) {
+            // filter only filterable fields
+            $filters = array_intersect_key($params->filters, array_flip($params->filterable_fields));
+            if (!empty($filters)) {
+                foreach ($filters as $field => $filter) {
+                    if (is_array($filter) && isset($filter['operator'], $filter['value'])) {
+                        $query->where($field, $filter['operator'], $filter['value']);
+                    } elseif (is_array($filter)) {
+                        $query->whereIn($field, $filter);
+                    } else {
+                        $query->where($field, $filter);
+                    }
+                }
+            }
+        }
+
+        // handle search
+        if (isset($params->search)) {
+            $query->where(function ($query) use ($params) {
+                foreach ($params->searchable_fields as $field) {
+                    $query->orWhere($field, 'like', '%' . $params->search . '%');
+                }
+            });
+        }
+
+        $sort_by = $params->sort_by ?? 'id';
+        $sort_direction = $params->sort_direction ?? 'asc';
+
+        // sort_by only $params->sortableFields
+        if (isset($params->sort_by) && in_array($params->sort_by, $params->sortable_fields)) {
+            $query->orderBy($sort_by, $sort_direction);
+        }
+
+        // Handle pagination
+        return $query->paginate($params->per_page, $params->columns, $params->page_name, $params->page);
+    }
+
+    protected function newQuery(): Builder
+    {
+        $query = $this->model->newQuery();
+        return $this->applyCriteria($query);
     }
 }
