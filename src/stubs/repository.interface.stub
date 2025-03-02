@@ -103,15 +103,6 @@ interface {{ class }}RepositoryInterface
     public function getFiltered(array $filters, array $params = []): LengthAwarePaginator;
 
     /**
-     * Register an event handler
-     *
-     * @param string $event
-     * @param callable $handler
-     * @return self
-     */
-    public function on(string $event, callable $handler): self;
-
-    /**
      * Include soft deleted records
      *
      * @return self

@@ -20,7 +20,7 @@ class MakeServiceCommand extends Command
         $repository = $this->option('repository') ?? $name;
 
         $this->createService($name, $repository);
-        $this->createInterface($name, $repository);
+        // $this->createInterface($name, $repository);
 
         $this->info('Service created successfully!');
     }

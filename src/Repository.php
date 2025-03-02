@@ -7,26 +7,19 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use MaduLinux\RepositoryPattern\DataTransferObjects\PaginationParameters;
-use MaduLinux\RepositoryPattern\Traits\Cacheable;
 use MaduLinux\RepositoryPattern\Traits\HasEvents;
 use MaduLinux\RepositoryPattern\Traits\SoftDeletes;
 use MaduLinux\RepositoryPattern\Traits\BulkOperations;
 use MaduLinux\RepositoryPattern\Traits\Transactional;
-use MaduLinux\RepositoryPattern\Traits\CustomCacheKey;
 use MaduLinux\RepositoryPattern\Traits\HasCriteria;
 
 abstract class Repository
 {
-    use Cacheable,
-        HasEvents,
+    use HasEvents,
         SoftDeletes,
         BulkOperations,
         Transactional,
-        HasCriteria,
-        CustomCacheKey {
-            Cacheable::getCacheKey insteadof CustomCacheKey;
-            CustomCacheKey::getCacheKey as getCustomCacheKey;
-        }
+        HasCriteria;
 
     /**
      * @var Model
@@ -52,9 +45,7 @@ abstract class Repository
      */
     public function all(): Collection
     {
-        return $this->remember(__FUNCTION__, [], function () {
-            return $this->model->all();
-        });
+        return $this->model->all();
     }
 
     /**
@@ -65,9 +56,7 @@ abstract class Repository
      */
     public function find($id): ?Model
     {
-        return $this->remember(__FUNCTION__, func_get_args(), function () use ($id) {
-            return $this->model->find($id);
-        });
+        return $this->model->find($id);
     }
 
     /**
@@ -79,9 +68,7 @@ abstract class Repository
      */
     public function findOrFail($id): Model
     {
-        return $this->remember(__FUNCTION__, func_get_args(), function () use ($id) {
-            return $this->model->findOrFail($id);
-        });
+        return $this->model->findOrFail($id);
     }
 
     /**
@@ -95,7 +82,6 @@ abstract class Repository
         $this->trigger('creating', $data);
         $result = $this->model->create($data);
         $this->trigger('created', $result);
-        $this->flushCache();
         return $result;
     }
 
@@ -116,7 +102,6 @@ abstract class Repository
         $this->trigger('updating', [$id, $data]);
         $result = $record->update($data);
         $this->trigger('updated', [$id, $data]);
-        $this->flushCache();
         return $result;
     }
 
@@ -136,7 +121,6 @@ abstract class Repository
         $this->trigger('deleting', $id);
         $result = $record->delete();
         $this->trigger('deleted', $id);
-        $this->flushCache();
         return $result;
     }
 
@@ -148,9 +132,7 @@ abstract class Repository
      */
     public function paginate(int $perPage = 15): LengthAwarePaginator
     {
-        return $this->remember(__FUNCTION__, func_get_args(), function () use ($perPage) {
-            return $this->model->paginate($perPage);
-        });
+        return $this->model->paginate($perPage);
     }
 
     /**
@@ -162,15 +144,13 @@ abstract class Repository
      */
     public function search(string $query, array $columns = ['*']): Collection
     {
-        return $this->remember(__FUNCTION__, func_get_args(), function () use ($query, $columns) {
-            return $this->model->where(function ($q) use ($query, $columns) {
-                foreach ($columns as $column) {
-                    if ($column !== '*') {
-                        $q->orWhere($column, 'LIKE', "%{$query}%");
-                    }
+        return $this->model->where(function ($q) use ($query, $columns) {
+            foreach ($columns as $column) {
+                if ($column !== '*') {
+                    $q->orWhere($column, 'LIKE', "%{$query}%");
                 }
-            })->get();
-        });
+            }
+        })->get();
     }
 
     /**
@@ -182,18 +162,16 @@ abstract class Repository
      */
     public function searchPaginated(string $query, array $params = []): LengthAwarePaginator
     {
-        return $this->remember(__FUNCTION__, func_get_args(), function () use ($query, $params) {
-            $perPage = $params['per_page'] ?? 15;
-            $columns = $params['columns'] ?? ['*'];
+        $perPage = $params['per_page'] ?? 15;
+        $columns = $params['columns'] ?? ['*'];
 
-            return $this->model->where(function ($q) use ($query, $columns) {
-                foreach ($columns as $column) {
-                    if ($column !== '*') {
-                        $q->orWhere($column, 'LIKE', "%{$query}%");
-                    }
+        return $this->model->where(function ($q) use ($query, $columns) {
+            foreach ($columns as $column) {
+                if ($column !== '*') {
+                    $q->orWhere($column, 'LIKE', "%{$query}%");
                 }
-            })->paginate($perPage);
-        });
+            }
+        })->paginate($perPage);
     }
 
     /**
@@ -205,31 +183,29 @@ abstract class Repository
      */
     public function getFiltered(array $filters, array $params = []): LengthAwarePaginator
     {
-        return $this->remember(__FUNCTION__, func_get_args(), function () use ($filters, $params) {
-            $query = $this->model->query();
-            $perPage = $params['per_page'] ?? 15;
+        $query = $this->model->query();
+        $perPage = $params['per_page'] ?? 15;
 
-            foreach ($filters as $field => $filter) {
-                if (is_array($filter) && isset($filter['operator'], $filter['value'])) {
-                    $query->where($field, $filter['operator'], $filter['value']);
-                } elseif (is_array($filter)) {
-                    $query->whereIn($field, $filter);
-                } else {
-                    $query->where($field, $filter);
-                }
+        foreach ($filters as $field => $filter) {
+            if (is_array($filter) && isset($filter['operator'], $filter['value'])) {
+                $query->where($field, $filter['operator'], $filter['value']);
+            } elseif (is_array($filter)) {
+                $query->whereIn($field, $filter);
+            } else {
+                $query->where($field, $filter);
             }
+        }
 
-            if (isset($params['sort_by'])) {
-                $direction = $params['sort_direction'] ?? 'asc';
-                $query->orderBy($params['sort_by'], $direction);
-            }
+        if (isset($params['sort_by'])) {
+            $direction = $params['sort_direction'] ?? 'asc';
+            $query->orderBy($params['sort_by'], $direction);
+        }
 
-            if (isset($params['with'])) {
-                $query->with($params['with']);
-            }
+        if (isset($params['with'])) {
+            $query->with($params['with']);
+        }
 
-            return $query->paginate($perPage);
-        });
+        return $query->paginate($perPage);
     }
 
 

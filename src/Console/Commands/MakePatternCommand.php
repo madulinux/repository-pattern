@@ -177,8 +177,8 @@ class MakePatternCommand extends Command
     {
         $params = [
             'name' => $this->option('api') 
-                ? 'Api/' . $name . 'Controller'
-                : $name . 'Controller'
+                ? 'Api/' . $name
+                : $name
         ];
 
         if ($this->option('force')) {
@@ -193,6 +193,6 @@ class MakePatternCommand extends Command
             $params['--resource'] = true;
         }
 
-        $this->call('make:controller', $params);
+        $this->call('make:custom-controller', $params);
     }
 }

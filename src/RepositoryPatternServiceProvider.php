@@ -5,6 +5,7 @@ namespace MaduLinux\RepositoryPattern;
 use Illuminate\Support\ServiceProvider;
 use MaduLinux\RepositoryPattern\Console\Commands\MakeRepositoryCommand;
 use MaduLinux\RepositoryPattern\Console\Commands\MakeCriteriaCommand;
+use MaduLinux\RepositoryPattern\Console\Commands\MakeCustomControllerCommand;
 use MaduLinux\RepositoryPattern\Console\Commands\MakeServiceCommand;
 use MaduLinux\RepositoryPattern\Console\Commands\MakePatternCommand;
 
@@ -29,6 +30,7 @@ class RepositoryPatternServiceProvider extends ServiceProvider
                 MakeCriteriaCommand::class,
                 MakeServiceCommand::class,
                 MakePatternCommand::class,
+                MakeCustomControllerCommand::class
             ]);
 
             $this->publishes([

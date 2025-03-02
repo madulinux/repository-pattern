@@ -1,0 +1,60 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use MaduLinux\RepositoryPattern\DataTransferObjects\PaginationParameters;
+use App\Services\{{ class }}Service;
+use App\Http\Requests\Store{{ class }}Request;
+use App\Http\Requests\Update{{ class }}Request;
+
+class {{ class }}Controller extends Controller
+{
+    /**
+     * @var {{ class }}Service
+     */
+    protected $service{{ class }};
+
+    /**
+     * Constructor
+     *
+     * @param {{ class }}Service $service{{ class }}
+     */
+    public function __construct({{ class }}Service $service{{ class }})
+    {
+        $this->service{{ class }} = $service{{ class }};
+    }
+
+    protected function paginateionParameters(Request $request): PaginationParameters
+    {
+        return PaginationParameters::fromRequest($request->merge(['searchable_fields' => ['*'], 'filterable_fields' => ['*'], 'sortable_fields' => ['*'], 'with' => [], 'other' => 'page']));
+    }
+
+    public function index(Request $request)
+    {
+        $params = $this->paginateionParameters($request);
+        return $this->service{{ class }}->getPaginated($params->toArray());
+    }
+
+    public function store(Store{{ class }}Request $request)
+    {
+        return $this->service{{ class }}->create($request->validated());
+    }
+
+    public function show($id)
+    {
+        return $this->service{{ class }}->findById($id);
+    }
+
+    public function update($id, Update{{ class }}Request $request)
+    {
+        return $this->service{{ class }}->update($id, $request->validated());
+    }
+
+    public function destroy($id)
+    {
+        return $this->service{{ class }}->delete($id);
+    }
+
+}
